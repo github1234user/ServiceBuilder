@@ -290,4 +290,50 @@ public class ProvisioningEngine {
             }
         }
     }
+    public static void CreateDataVolume (String diskname) throws IOException, InterruptedException {
+        // Create intial Managed Disk from VHD file
+        body = "{\n" +
+                "    \"location\": \"West Europe\", \n" +
+                "        \"tags\": { \n" +
+                "        \"organization\": \"TestDS\", \n" +
+                "        \"description\": \"Tests creating a full deployment workflow\", \n" +
+                "        },\n" +
+                "    \"properties\": {\n" +
+                "        \"creationData\": { \n" +
+                "             \"createOption\": \"Empty\", \n" +
+                "            }, \n" +
+                "        \"osType\": \"Linux\",\n" +
+                "        \"accountType\": \"Premium_LRS\",\n" +
+                "        \"diskSizeGB\": \"128\"\n" +
+                "        } \n" +
+                "}";
+
+        url = "https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourcegroups/testds/providers/Microsoft.Compute/disks/" + diskname + "?api-version=2016-04-30-preview";
+        restClient.ExecCall("PUT", url, body);
+    }
+
+    public static void AttachDataVolume (String vmname, String diskname, String lun) throws IOException, InterruptedException {
+
+        body="{\n" +
+                "    \"location\": \"West Europe\",\n" +
+                "    \"properties\": {\n" +
+                "        \"storageProfile\": {\n" +
+                "            \"dataDisks\": [ \n" +
+                "                { \n" +
+                "                    \"lun\": \""+lun+"\",  \n" +
+                "                    \"name\": \""+diskname+"\", \n" +
+                "                    \"managedDisk\": { \n" +
+                "                    \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/disks/"+diskname+"\",\n" +
+                "                    \"storageAccountType\": \"Premium_LRS\" \n" +
+                "                }, \n" +
+                "                \"createOption\": \"attach\" \n" +
+                "                },\n" +
+                "            ]\n" +
+                "        }\n" +
+                "    }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/virtualMachines/" + vmname + "?api-version=2016-04-30-preview";;
+        restClient.ExecCall("PUT", url, body);
+    }
 }

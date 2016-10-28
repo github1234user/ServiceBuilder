@@ -19,18 +19,23 @@ public class Main {
         Date start = new Date();
 
         // Create Managed Disk volume
-        provEngine.CreateVolume("osdiskds");
+        //provEngine.CreateVolume("osdiskds");
 
         // Create Base VM Instance based on MD
-        provEngine.CreateBaseVMInstance("basevm");
+        //provEngine.CreateBaseVMInstance("basevm");
 
         // Customize VM Instance (e.g. add new data disk)
         // Generalize VM Instance
 
         // Capture VM Image
-        provEngine.CaptureVMImage("basevm","osdiskds","imgfinalvm");
+        //provEngine.CaptureVMImage("basevm","osdiskds","imgfinalvm");
 
-        provEngine.DeployTargetVMInstance("finalvm");
+        //provEngine.DeployTargetVMInstance("finalvm");
+
+        //
+        //provEngine.CreateDataVolume("data1");
+        //
+        provEngine.AttachDataVolume("finalvm","data1","1");
 
         Date end = new Date();
         System.out.println(dateFormat.format(new Date()) + " INFO: Test execution (took " + ((end.getTime() - start.getTime()) / 1000.00) + " seconds) \n");

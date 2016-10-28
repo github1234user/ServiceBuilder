@@ -70,12 +70,7 @@ public class RestClient {
         // execute the request
         res = restClient.httpClient().newCall(req).execute();
 
-        // if it's a GET, return the body
-        if(res.code() == 200) {
-
-            return res.body().string();
-
-        } else if (res.code() == 201 || res.code() == 202) {
+        if (res.code() == 200 || res.code() == 201 || res.code() == 202) {
 
             // It's a long running operation
             if (!res.headers().values("Azure-AsyncOperation").isEmpty()) {
@@ -109,7 +104,7 @@ public class RestClient {
                     String out = res.body().string();
 
                     // if the operation is still ongoing
-                    if (!res.headers().values("Azure-AsyncOperation").isEmpty() || res.body().string().contains("InProgress")) {
+                    if (!res.headers().values("Azure-AsyncOperation").isEmpty() || out.contains("InProgress")) {
                         cont = true;
                         log.info(dateFormat.format(new Date()) + " LongRunningOperationCheck RequestId: " + reqid + " AsyncOperation: " + asyncOp + " Retry-After: " + retryAfter);
                     } else
