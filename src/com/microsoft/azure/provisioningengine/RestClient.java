@@ -91,7 +91,7 @@ public class RestClient {
                 // Wait for "Retry-After" interval and re-check
                 while (cont) {
 
-                    Thread.sleep(Integer.parseInt(retryAfter) * 500);
+                    Thread.sleep(Integer.parseInt(retryAfter) * 1000);
 
                     req = new Request
                             .Builder()

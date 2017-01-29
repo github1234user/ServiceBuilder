@@ -32,6 +32,62 @@ public class ProvisioningEngine {
                     "AccountName=testdssrc;" +
                     "AccountKey="+ System.getenv("accountkey");
 
+    public static void DetachPublicIP(String vmname) throws IOException, InterruptedException {
+
+        // Detach PublicIP from a NIC
+        body="{  \n" +
+                "   \"location\":\"West Europe\",\n" +
+                "   \"properties\":{  \n" +
+                "      \"ipConfigurations\":[  \n" +
+                "         {  \n" +
+                "            \"name\":\"myip1\",\n" +
+                "            \"properties\":{  \n" +
+                "               \"subnet\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/testvnet/subnets/default\"\n" +
+                "               },\n" +
+                "               \"privateIPAllocationMethod\":\"Dynamic\",\n" +
+                "               \"privateIPAddressVersion\":\"IPv4\"               \n" +
+                "            }\n" +
+                "         }\n" +
+                "      ],\n" +
+                "      \"enableIPForwarding\": false\n" +
+                "   }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/nic" + vmname + "?api-version=2016-03-30";;
+        restClient.ExecCall("PUT", url, body);
+    }
+
+    public static void AttachPublicIP(String vmname, String ipname) throws IOException, InterruptedException {
+
+        // Update the NIC
+        body="{  \n" +
+                "   \"location\":\"West Europe\",\n" +
+                "   \"properties\":{  \n" +
+                "      \"ipConfigurations\":[  \n" +
+                "         {  \n" +
+                "            \"name\":\"myip1\",\n" +
+                "            \"properties\":{  \n" +
+                "               \"subnet\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/testvnet/subnets/default\"\n" +
+                "               },\n" +
+                "               \"privateIPAllocationMethod\":\"Dynamic\",\n" +
+                "               \"privateIPAddressVersion\":\"IPv4\",               \n" +
+                "               \"publicIPAddress\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/publicIPAddresses/" +ipname+ "\"\n" +
+                "               }\n" +
+                "            }\n" +
+                "         }\n" +
+                "      ],\n" +
+                "      \"enableIPForwarding\": false\n" +
+                "   }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/nic" + vmname + "?api-version=2016-03-30";;
+        restClient.ExecCall("PUT", url, body);
+
+    }
+
     public static void CreateVolume(String diskname) throws IOException, InterruptedException {
         // Create intial Managed Disk from VHD file
         body = "{\n" +
@@ -55,7 +111,146 @@ public class ProvisioningEngine {
         restClient.ExecCall("PUT", url, body);
     }
 
-    public  static void CreateBaseVMInstance(String vmname) throws IOException, InterruptedException {
+    public static void AttachIpAndDiskToNewVM (String vmname, String pipname, String diskname)  throws IOException, InterruptedException
+    {
+        // Create a NIC
+        body="{  \n" +
+                "   \"location\":\"West Europe\",\n" +
+                "   \"properties\":{  \n" +
+                "      \"ipConfigurations\":[  \n" +
+                "         {  \n" +
+                "            \"name\":\"myip1\",\n" +
+                "            \"properties\":{  \n" +
+                "               \"subnet\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/testvnet/subnets/default\"\n" +
+                "               },\n" +
+                "               \"privateIPAllocationMethod\":\"Dynamic\",\n" +
+                "               \"privateIPAddressVersion\":\"IPv4\",               \n" +
+                "               \"publicIPAddress\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/publicIPAddresses/" +pipname+ "\"\n" +
+                "               }\n" +
+                "            }\n" +
+                "         }\n" +
+                "      ],\n" +
+                "      \"enableIPForwarding\": false\n" +
+                "   }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/nic" + vmname + "?api-version=2016-03-30";;
+        restClient.ExecCall("PUT", url, body);
+
+        // Create a VM *Instance* based on new Managed Disk
+        body = "{\n" +
+                "\t\"location\": \"West Europe\",\n" +
+                "\t\"properties\": {\n" +
+                "\t\t  \"hardwareProfile\": {\n" +
+                "    \t  \t\t\"vmSize\": \"Standard_DS2\"\n" +
+                "    \t\t},\n" +
+                "\t\t  \"osProfile\": {\n" +
+                "    \t  \t\t\"computerName\": \""+vmname+"\",\n" +
+                "    \t  \t\t\"adminUsername\": \"scoriani\",\n" +
+                "    \t  \t\t\"linuxConfiguration\": {\n" +
+                "    	  		\"disablePasswordAuthentication\": \"true\",\n"+
+                "    	  		    \"ssh\": { \n"+
+                "    	  		    \"publicKeys\": [ \n"+
+                "                    { \n"+
+                "                        \"path\": \"/home/scoriani/.ssh/authorized_keys\", \n"+
+                "                        \"keyData\": \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEgrFro8QhtX3tRwP/F0AEw/fGeDs2SMKgTmErBKmDgmV5wPhMgRTRTAXUPFHdLO2JRoJL+le73Ha722t0//UXXmCQuB+EHrS+DmFYFfwjD47yiwTlKLxrmV0vddrkHK2QZ0FFZ6a9DTvtYE621pHTckJLyAHT/sR2rFm6NXdvWzKR+lOdPYckq6Zc9YPettre0WgzZ+kRRCoau9IRxdND7BAriZOp5R13/r3WAFxd4f9Bd0KpXBGjMvGQrQR9wz4xX8VcHUoVMG6b0eCS3qxam9oZ05ocz0XzEypQwJKqYkpC6ZWw1cmZlfB94FPP0iirJVteDeDu958H82PumZll\" \n"+
+                "                    } \n"+
+                "                   ] \n"+
+                "                } \n"+
+                "            } \n" +
+                "    \t\t},\n" +
+                "\t\t\"storageProfile\": {\n" +
+                "       \"imageReference\": {\n" +
+                "       \"publisher\": \"OpenLogic\",\n" +
+                "       \"offer\": \"CentOS\",\n" +
+                "       \"sku\": \"6.5\",\n" +
+                "       \"version\": \"latest\"\n" +
+                "       }, \n" +
+                "      \"dataDisks\": [\n" +
+                "         {\n" +
+                "           \"lun\": 0,\n" +
+                "           \"name\": \""+diskname+"\",\n" +
+                "           \"createOption\": \"attach\",\n" +
+                "           \"managedDisk\":\n" +
+                "              {\n" +
+                "                \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/disks/"+diskname+"\"\n" +
+                "              }\n" + "\n" +
+                "         }]" +
+                "   },\n "+
+                "\t  \"networkProfile\": {\n" +
+                "\t      \"networkInterfaces\": [\n" +
+                "\t        {\n" +
+                "\t          \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/nic" + vmname + "\",\n" +
+                "\t          \"properties\": {\n" +
+                "\t            \"primary\": true\n" +
+                "\t          }\n" +
+                "\t        }\n" +
+                "\t      ]\n" +
+                "\t    }\n" +
+                "\t}\n" +
+                "}";
+
+        url = "https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/virtualMachines/" + vmname + "?api-version=2016-04-30-preview";
+        restClient.ExecCall("PUT", url, body);
+
+    }
+
+    public  static void DetachIpAndDiskFromBrokenVM(String vmname) throws IOException, InterruptedException
+    {
+        DetachPublicIP(vmname);
+
+        // Strip Data Disk from an existing VM
+        body = "{\n" +
+                "\t\"location\": \"West Europe\",\n" +
+                "\t\"properties\": {\n" +
+                "\t\t  \"hardwareProfile\": {\n" +
+                "    \t  \t\t\"vmSize\": \"Standard_DS2\"\n" +
+                "    \t\t},\n" +
+                "\t\t  \"osProfile\": {\n" +
+                "    \t  \t\t\"computerName\": \""+vmname+"\",\n" +
+                "    \t  \t\t\"adminUsername\": \"scoriani\",\n" +
+                "    \t  \t\t\"linuxConfiguration\": {\n" +
+                "    	  		\"disablePasswordAuthentication\": \"true\",\n"+
+                "    	  		    \"ssh\": { \n"+
+                "    	  		    \"publicKeys\": [ \n"+
+                "                    { \n"+
+                "                        \"path\": \"/home/scoriani/.ssh/authorized_keys\", \n"+
+                "                        \"keyData\": \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEgrFro8QhtX3tRwP/F0AEw/fGeDs2SMKgTmErBKmDgmV5wPhMgRTRTAXUPFHdLO2JRoJL+le73Ha722t0//UXXmCQuB+EHrS+DmFYFfwjD47yiwTlKLxrmV0vddrkHK2QZ0FFZ6a9DTvtYE621pHTckJLyAHT/sR2rFm6NXdvWzKR+lOdPYckq6Zc9YPettre0WgzZ+kRRCoau9IRxdND7BAriZOp5R13/r3WAFxd4f9Bd0KpXBGjMvGQrQR9wz4xX8VcHUoVMG6b0eCS3qxam9oZ05ocz0XzEypQwJKqYkpC6ZWw1cmZlfB94FPP0iirJVteDeDu958H82PumZll\" \n"+
+                "                    } \n"+
+                "                   ] \n"+
+                "                } \n"+
+                "            } \n" +
+                "    \t\t},\n" +
+                "\t\t\"storageProfile\": {\n" +
+                "       \"imageReference\": {\n" +
+                "       \"publisher\": \"OpenLogic\",\n" +
+                "       \"offer\": \"CentOS\",\n" +
+                "       \"sku\": \"6.5\",\n" +
+                "       \"version\": \"latest\"\n" +
+                "       }, \n" +
+                "      \"dataDisks\": [\n" +
+                "         ]" +
+                "   },\n "+
+                "\t  \"networkProfile\": {\n" +
+                "\t      \"networkInterfaces\": [\n" +
+                "\t        {\n" +
+                "\t          \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/nic"+vmname+"\",\n" +
+                "\t          \"properties\": {\n" +
+                "\t            \"primary\": true\n" +
+                "\t          }\n" +
+                "\t        }\n" +
+                "\t      ]\n" +
+                "\t    }\n" +
+                "\t}\n" +
+                "}";
+
+        url = "https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/virtualMachines/" + vmname + "?api-version=2016-04-30-preview";
+        restClient.ExecCall("PUT", url, body);
+
+    }
+        public  static void CreateBaseVMInstance(String vmname) throws IOException, InterruptedException {
 
         // Create a Public IP
         body="\n" +
@@ -80,7 +275,7 @@ public class ProvisioningEngine {
                 "            \"name\":\"myip1\",\n" +
                 "            \"properties\":{  \n" +
                 "               \"subnet\":{  \n" +
-                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/vnet3043f9f6d1/subnets/subnet1\"\n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/testvnet/subnets/default\"\n" +
                 "               },\n" +
                 "               \"privateIPAllocationMethod\":\"Dynamic\",\n" +
                 "               \"privateIPAddressVersion\":\"IPv4\",               \n" +
@@ -102,17 +297,49 @@ public class ProvisioningEngine {
                 "\t\"location\": \"West Europe\",\n" +
                 "\t\"properties\": {\n" +
                 "\t\t  \"hardwareProfile\": {\n" +
-                "    \t  \t\t\"vmSize\": \"Standard_DS1\"\n" +
+                "    \t  \t\t\"vmSize\": \"Standard_DS2\"\n" +
+                "    \t\t},\n" +
+                "\t\t  \"osProfile\": {\n" +
+                "    \t  \t\t\"computerName\": \""+vmname+"\",\n" +
+                "    \t  \t\t\"adminUsername\": \"scoriani\",\n" +
+                "    \t  \t\t\"linuxConfiguration\": {\n" +
+                "    	  		\"disablePasswordAuthentication\": \"true\",\n"+
+                "    	  		    \"ssh\": { \n"+
+                "    	  		    \"publicKeys\": [ \n"+
+                "                    { \n"+
+                "                        \"path\": \"/home/scoriani/.ssh/authorized_keys\", \n"+
+                "                        \"keyData\": \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEgrFro8QhtX3tRwP/F0AEw/fGeDs2SMKgTmErBKmDgmV5wPhMgRTRTAXUPFHdLO2JRoJL+le73Ha722t0//UXXmCQuB+EHrS+DmFYFfwjD47yiwTlKLxrmV0vddrkHK2QZ0FFZ6a9DTvtYE621pHTckJLyAHT/sR2rFm6NXdvWzKR+lOdPYckq6Zc9YPettre0WgzZ+kRRCoau9IRxdND7BAriZOp5R13/r3WAFxd4f9Bd0KpXBGjMvGQrQR9wz4xX8VcHUoVMG6b0eCS3qxam9oZ05ocz0XzEypQwJKqYkpC6ZWw1cmZlfB94FPP0iirJVteDeDu958H82PumZll\" \n"+
+                "                    } \n"+
+                "                   ] \n"+
+                "                } \n"+
+                "            } \n" +
                 "    \t\t},\n" +
                 "\t\t\"storageProfile\": {\n" +
-                "\t\t\t\"osDisk\": \t{\n" +
-                "\t\t\t\t\"createOption\": \"attach\",\n" +
-                "\t\t\t\t\"osType\": \"Linux\",\n" +
-                "\t\t\t\t\"managedDisk\": {\n" +
-                "\t\t\t\t\"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/disks/osdiskds\"\n" +
-                "\t\t\t\t}\n" +
-                "\t\t\t}\n" +
-                "\t\t},\n" +
+                "       \"imageReference\": {\n" +
+                "       \"publisher\": \"OpenLogic\",\n" +
+                "       \"offer\": \"CentOS\",\n" +
+                "       \"sku\": \"6.5\",\n" +
+                "       \"version\": \"latest\"\n" +
+                "       }, \n" +
+                "      \"dataDisks\": [\n" +
+                "         {\n" +
+                "           \"lun\": 0,\n" +
+                "           \"name\": \"basedatadisk\",\n" +
+                "           \"createOption\": \"attach\",\n" +
+                "           \"managedDisk\":\n" +
+                "              {\n" +
+                "                \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/disks/basedatadisk\"\n" +
+                "              }\n" + "\n" +
+                "         }]" +
+                "   },\n "+
+//                "\t\t\t\"osDisk\": \t{\n" +
+//                "\t\t\t\t\"createOption\": \"Empty\",\n" +
+//                "\t\t\t\t\"osType\": \"Linux\",\n" +
+//                "\t\t\t\t\"managedDisk\": {\n" +
+//                "\t\t\t\t\"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/disks/osdisk"+vmname+"\"\n" +
+//                "\t\t\t\t}\n" +
+//                "\t\t\t}\n" +
+//                "\t\t},\n" +
                 "\t  \"networkProfile\": {\n" +
                 "\t      \"networkInterfaces\": [\n" +
                 "\t        {\n" +
@@ -130,7 +357,74 @@ public class ProvisioningEngine {
         restClient.ExecCall("PUT", url, body);
     }
 
-    public static void CaptureVMImage(String vmname, String diskname, String imagename) throws IOException, InterruptedException, URISyntaxException, InvalidKeyException, StorageException {
+    public static void ProvisionAndAttachIP(String vmname) throws IOException, InterruptedException, URISyntaxException, InvalidKeyException, StorageException
+    {
+        // Create a new Public IP
+        body="\n" +
+                "{\n" +
+                "   \"location\": \"North Europe\",\n" +
+                "   \"properties\": {\n" +
+                "      \"publicIPAllocationMethod\": \"Static\",\n" +
+                "      \"publicIPAddressVersion\": \"IPv4\",\n" +
+                "      \"idleTimeoutInMinutes\": 4\n" +
+                "   }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/publicIPAddresses/pip" + vmname + "?api-version=2016-03-30";
+        restClient.ExecCall("PUT", url, body);
+
+        // Update a NIC attached to a VM
+        body="{  \n" +
+                "   \"location\":\"northeurope\",\n" +
+                "   \"properties\":{  \n" +
+                "        \"virtualMachine\": { \n" +
+                "       \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/virtualMachines/finalvm7678\" \n" +
+                "  }, \n" +
+                "      \"ipConfigurations\":[  \n" +
+                "         {  \n" +
+                "            \"name\":\"ipconfig1\",\n" +
+                "            \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/finalvm7678/ipConfigurations/ipconfig1\", \n " +
+                "            \"properties\":{  \n" +
+                "               \"subnet\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/virtualNetworks/testds-vnet/subnets/default\"\n" +
+                "               },\n" +
+                "               \"privateIPAllocationMethod\":\"Dynamic\",\n" +
+                "               \"privateIPAddressVersion\":\"IPv4\",               \n" +
+                "               \"primary\": true,               \n" +
+                "               \"publicIPAddress\":{  \n" +
+                "                  \"id\":\"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/publicIPAddresses/pip" +vmname+ "\", \n " +
+                "                  \"location\": \"northeurope\"\n" +
+                "               }\n" +
+                "            }\n" +
+                "         }\n" +
+                "      ],\n" +
+                "      \"enableIPForwarding\": false\n" +
+                "   }\n" +
+                "}";
+
+        url="https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Network/networkInterfaces/" + vmname + "?api-version=2016-03-30";;
+        restClient.ExecCall("PUT", url, body);
+
+    }
+
+    public static void CaptureVMImageNew(String vmname, String diskname, String imagename) throws IOException, InterruptedException, URISyntaxException, InvalidKeyException, StorageException
+    {
+        String body = "{\n" +
+                "  \"location\": \"West Europe\",\n" +
+                "  \"properties\": {\n" +
+                "    \"sourceVirtualMachine\": {\n" +
+                "      \"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/virtualMachines/"+vmname+"\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+
+        url = "https://management.azure.com/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/images/"+imagename+"?api-version=2016-04-30-preview";
+
+        restClient.ExecCall("PUT", url, body);
+    }
+
+    public static void CaptureVMImage(String vmname, String diskname, String imagename) throws IOException, InterruptedException, URISyntaxException, InvalidKeyException, StorageException
+    {
 
         String sourceuri="";
         CloudStorageAccount storageAccount = CloudStorageAccount.parse(storageConnectionString);
@@ -156,7 +450,7 @@ public class ProvisioningEngine {
         // for whatever reason a simple .getString("accessSAS") doesn't work :(
         sourceuri = (String) jsonObj.getJSONObject("properties").getJSONObject("output").toMap().values().toArray()[0];
 
-        // Copy the VHD to a different place
+        // Copy the VHD to a target storage account (maybe in the same or different subscription)
         CloudBlobContainer container = blobClient.getContainerReference("sourcevhd");
         CloudPageBlob dest = container.getPageBlobReference("img"+diskname+".vhd");
 
@@ -245,7 +539,7 @@ public class ProvisioningEngine {
                 "    \t\t},\n" +
                 "\t\t\t\t\"storageProfile\": {\n" +
                 "\t\t\t\t\t\"imageReference\": {\n" +
-                "\t\t\t\t\t\t\"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/images/img"+vmname+"\"\n" +
+                "\t\t\t\t\t\t\"id\": \"/subscriptions/e243327e-b18c-4766-8f44-d9a945082e57/resourceGroups/testds/providers/Microsoft.Compute/images/imgfinalvm5\"\n" +
                 "\t\t\t\t}\n" +
                 "\t\t},\n" +
                 "\t  \"networkProfile\": {\n" +
@@ -293,7 +587,7 @@ public class ProvisioningEngine {
     public static void CreateDataVolume (String diskname) throws IOException, InterruptedException {
         // Create intial Managed Disk from VHD file
         body = "{\n" +
-                "    \"location\": \"West Europe\", \n" +
+                "    \"location\": \"westeurope\", \n" +
                 "        \"tags\": { \n" +
                 "        \"organization\": \"TestDS\", \n" +
                 "        \"description\": \"Tests creating a full deployment workflow\", \n" +
@@ -315,7 +609,7 @@ public class ProvisioningEngine {
     public static void AttachDataVolume (String vmname, String diskname, String lun) throws IOException, InterruptedException {
 
         body="{\n" +
-                "    \"location\": \"West Europe\",\n" +
+                "    \"location\": \"westeurope\",\n" +
                 "    \"properties\": {\n" +
                 "        \"storageProfile\": {\n" +
                 "            \"dataDisks\": [ \n" +
