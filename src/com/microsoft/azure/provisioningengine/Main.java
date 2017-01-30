@@ -25,7 +25,7 @@ public class Main {
     static private DateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy K:mm:ss a");
     static private ProvisioningEngine provEngine;
 
-    public static void main(String[] args) throws IOException, InterruptedException, InvalidKeyException, StorageException, URISyntaxException {
+    public static void main(String[] args) throws IOException, InterruptedException, InvalidKeyException, StorageException, URISyntaxException, JSchException {
         Date start = new Date();
 
         //Create Managed Disk volume
@@ -49,8 +49,7 @@ public class Main {
         System.out.println(dateFormat.format(new Date()) + " INFO: Test execution (took " + ((end.getTime() - start.getTime()) / 1000.00) + " seconds) \n");
     }
 
-    public static void CompleteWorkflow() throws IOException, InterruptedException, InvalidKeyException, StorageException, URISyntaxException
-    {
+    public static void CompleteWorkflow() throws IOException, InterruptedException, InvalidKeyException, StorageException, URISyntaxException, JSchException {
         // Detach Ip and Disk from broken VM
         DetachIpAndDiskFromBrokenVM("basevm");
 
@@ -59,5 +58,65 @@ public class Main {
 
         // SSH connect and disk check
         // TBD
+        ConnectSSH();
+    }
+
+    public static void ConnectSSH() throws JSchException, IOException {
+
+        java.util.Properties config = new java.util.Properties();
+        config.put("StrictHostKeyChecking", "no");
+
+        JSch jsch=new JSch();
+
+        jsch.addIdentity( "~/key.pub" , "passphrase");
+
+        Session session=jsch.getSession("scoriani", "52.232.114.148", 22);
+
+        session.setConfig(config);
+
+        System.out.println(dateFormat.format(new Date()) + " INFO: Connect via SSH to new VM ");
+
+        session.connect();
+
+        Channel channel=session.openChannel("exec");
+
+        System.out.println(dateFormat.format(new Date()) + " INFO: Exec 'ls /dev/sdc' command to check data disk is there ");
+
+        ((ChannelExec)channel).setCommand("ls /dev/sdc");
+
+        channel.setInputStream(null);
+
+        ((ChannelExec)channel).setErrStream(System.err);
+
+        InputStream in=channel.getInputStream();
+
+        channel.connect();
+
+        System.out.println(dateFormat.format(new Date()) + " INFO: return: ");
+
+        byte[] tmp=new byte[1024];
+
+        while(true){
+
+            while(in.available()>0){
+                int i=in.read(tmp, 0, 1024);
+
+                if(i<0)break;
+
+                System.out.print(new String(tmp, 0, i));
+            }
+
+            if(channel.isClosed()){
+                if(in.available()>0) continue;
+
+                System.out.println("exit-status: "+channel.getExitStatus());
+
+                break;
+            }
+
+            try{Thread.sleep(1000);}catch(Exception ee){}
+        }
+        channel.disconnect();
+        session.disconnect();
     }
 }
