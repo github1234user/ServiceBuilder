@@ -155,7 +155,7 @@ public class ProvisioningEngine {
                 "    	  		    \"publicKeys\": [ \n"+
                 "                    { \n"+
                 "                        \"path\": \"/home/scoriani/.ssh/authorized_keys\", \n"+
-                "                        \"keyData\": \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEgrFro8QhtX3tRwP/F0AEw/fGeDs2SMKgTmErBKmDgmV5wPhMgRTRTAXUPFHdLO2JRoJL+le73Ha722t0//UXXmCQuB+EHrS+DmFYFfwjD47yiwTlKLxrmV0vddrkHK2QZ0FFZ6a9DTvtYE621pHTckJLyAHT/sR2rFm6NXdvWzKR+lOdPYckq6Zc9YPettre0WgzZ+kRRCoau9IRxdND7BAriZOp5R13/r3WAFxd4f9Bd0KpXBGjMvGQrQR9wz4xX8VcHUoVMG6b0eCS3qxam9oZ05ocz0XzEypQwJKqYkpC6ZWw1cmZlfB94FPP0iirJVteDeDu958H82PumZll\" \n"+
+                "                        \"keyData\": \"publickey\" \n"+
                 "                    } \n"+
                 "                   ] \n"+
                 "                } \n"+
@@ -308,7 +308,7 @@ public class ProvisioningEngine {
                 "    	  		    \"publicKeys\": [ \n"+
                 "                    { \n"+
                 "                        \"path\": \"/home/scoriani/.ssh/authorized_keys\", \n"+
-                "                        \"keyData\": \"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEgrFro8QhtX3tRwP/F0AEw/fGeDs2SMKgTmErBKmDgmV5wPhMgRTRTAXUPFHdLO2JRoJL+le73Ha722t0//UXXmCQuB+EHrS+DmFYFfwjD47yiwTlKLxrmV0vddrkHK2QZ0FFZ6a9DTvtYE621pHTckJLyAHT/sR2rFm6NXdvWzKR+lOdPYckq6Zc9YPettre0WgzZ+kRRCoau9IRxdND7BAriZOp5R13/r3WAFxd4f9Bd0KpXBGjMvGQrQR9wz4xX8VcHUoVMG6b0eCS3qxam9oZ05ocz0XzEypQwJKqYkpC6ZWw1cmZlfB94FPP0iirJVteDeDu958H82PumZll\" \n"+
+                "                        \"keyData\": \"publickey\" \n"+
                 "                    } \n"+
                 "                   ] \n"+
                 "                } \n"+
